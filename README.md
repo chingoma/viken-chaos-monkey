@@ -15,16 +15,16 @@ Chaos endpoints now require HTTP Basic auth with RBAC. Override defaults with en
 
 ```bash
 # Build
-./gradlew build
+mvn clean package
 
 # Run (chaos disabled by default)
-./gradlew bootRun
+mvn spring-boot:run
 
 # Run with dev profile (chaos enabled, simulated adapter)
-./gradlew bootRun --args='--spring.profiles.active=dev'
+mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 # If port 8080 is in use, override:
-./gradlew bootRun --args='--spring.profiles.active=dev --server.port=8082'
+mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=dev --server.port=8082"
 ```
 
 ## API Endpoints
@@ -55,7 +55,18 @@ curl -X POST http://localhost:8080/api/chaos/experiments \
 
 ## Configuration
 
-See `application.properties` and `CHAOS_MONKEY_ENTERPRISE_PLAN.md` for full configuration options.
+See `application.properties` for configuration options.
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Setup Guides](docs/setup/)** - IntelliJ IDEA setup, project configuration
+- **[Migration Docs](docs/migration/)** - Gradle to Maven migration history
+- **[User Guides](docs/guides/)** - Platform usage and features
+- **[Planning](docs/planning/)** - Enterprise roadmap and features
+
+For a complete overview, see the [Documentation Index](docs/README.md).
 
 ## Project Structure
 
