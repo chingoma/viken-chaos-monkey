@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/chaos/status")
                         .hasAnyRole("VIEWER", "AUDITOR", "OPERATOR", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/chaos/experiments")
