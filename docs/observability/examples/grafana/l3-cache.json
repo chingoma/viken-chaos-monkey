@@ -1,0 +1,51 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Cache Hit Ratio",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(cache_requests_total{service=\"$service\",outcome=\"hit\"}[5m])) / sum(rate(cache_requests_total{service=\"$service\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Cache Operation p95 Latency",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(cache_operation_seconds_bucket{service=\"$service\"}[5m])))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Evictions and Blocked Clients",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "increase(cache_evictions_total{service=\"$service\"}[15m])" },
+        { "refId": "B", "expr": "max(cache_blocked_clients{service=\"$service\"})" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:triage", "cache"],
+  "templating": {
+    "list": [
+      { "name": "service", "label": "service", "type": "query", "query": "label_values(cache_requests_total, service)", "refresh": 1 }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] Cache - Are Hit Ratio and Latency Stable?",
+  "uid": "obs_l3_cache",
+  "version": 1
+}

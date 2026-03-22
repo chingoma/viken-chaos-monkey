@@ -1,0 +1,50 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Burn Rate (5m)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "(sum(rate(http_server_requests_seconds_count{service=\"$service\",status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{service=\"$service\"}[5m]))) / (1 - 0.999)" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Burn Rate (1h)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "(sum(rate(http_server_requests_seconds_count{service=\"$service\",status=~\"5..\"}[1h])) / sum(rate(http_server_requests_seconds_count{service=\"$service\"}[1h]))) / (1 - 0.999)" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Availability SLI",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "1 - (sum(rate(http_server_requests_seconds_count{service=\"$service\",status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{service=\"$service\"}[5m])))" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l2", "class:triage", "slo", "error-budget"],
+  "templating": {
+    "list": [
+      { "name": "service", "label": "service", "type": "query", "query": "label_values(http_server_requests_seconds_count, service)", "refresh": 1 }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "[L2] SLO Error Budget - Are We Burning Too Fast?",
+  "uid": "obs_l2_slo_budget",
+  "version": 1
+}

@@ -1,0 +1,120 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observability-slo-rules
+  namespace: monitoring
+spec:
+  groups:
+    - name: sli-recording-rules
+      rules:
+        - record: service:http_requests:rate5m
+          expr: |
+            sum by (environment, cluster, namespace, service) (
+              rate(http_server_requests_seconds_count[5m])
+            )
+        - record: service:http_5xx:rate5m
+          expr: |
+            sum by (environment, cluster, namespace, service) (
+              rate(http_server_requests_seconds_count{status=~"5.."}[5m])
+            )
+        - record: service:http_5xx:error_ratio5m
+          expr: |
+            service:http_5xx:rate5m / service:http_requests:rate5m
+        - record: service:http_latency_p95_seconds:5m
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (environment, cluster, namespace, service, le) (
+                rate(http_server_requests_seconds_bucket[5m])
+              )
+            )
+
+    - name: burn-rate-alerts
+      rules:
+        - alert: ServiceAvailabilityFastBurn
+          expr: |
+            (
+              service:http_5xx:error_ratio5m
+              /
+              (1 - 0.999)
+            ) > 14
+          for: 5m
+          labels:
+            severity: critical
+            tier: tier0
+            team: "{{ $labels.team }}"
+            service: "{{ $labels.service }}"
+            pager_rotation: platform-oncall
+          annotations:
+            summary: "Fast burn-rate breach for {{ $labels.service }}"
+            description: "Service is consuming error budget too quickly (fast window)."
+            runbook_url: "/runbooks/platform/{{ $labels.service }}/slo-fast-burn"
+            dashboard_uid: "obs_l3_service_health_standard"
+            grafana_link: "/d/obs_l3_service_health_standard"
+
+        - alert: ServiceAvailabilitySlowBurn
+          expr: |
+            (
+              sum by (environment, cluster, namespace, service) (
+                rate(http_server_requests_seconds_count{status=~"5.."}[1h])
+              )
+              /
+              sum by (environment, cluster, namespace, service) (
+                rate(http_server_requests_seconds_count[1h])
+              )
+            ) / (1 - 0.999) > 3
+          for: 30m
+          labels:
+            severity: warning
+            tier: tier0
+            team: "{{ $labels.team }}"
+            service: "{{ $labels.service }}"
+            pager_rotation: platform-oncall
+          annotations:
+            summary: "Slow burn-rate breach for {{ $labels.service }}"
+            description: "Service is steadily burning error budget above target."
+            runbook_url: "/runbooks/platform/{{ $labels.service }}/slo-slow-burn"
+            dashboard_uid: "obs_l2_slo_budget"
+            grafana_link: "/d/obs_l2_slo_budget"
+
+        - alert: GatewayMultiService5xxSurge
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{service=~"gateway|ingress",status=~"5.."}[5m]))
+              /
+              sum(rate(http_server_requests_seconds_count{service=~"gateway|ingress"}[5m]))
+            ) > 0.02
+          for: 10m
+          labels:
+            severity: critical
+            tier: edge
+            team: platform
+            service: gateway
+            pager_rotation: edge-oncall
+          annotations:
+            summary: "Gateway 5xx surge across edge traffic"
+            description: "Ingress/gateway 5xx ratio is above 2% for 10m."
+            runbook_url: "/runbooks/edge/gateway/5xx-surge"
+            dashboard_uid: "obs_l3_api_gateway"
+            grafana_link: "/d/obs_l3_api_gateway"
+
+        - alert: DeploymentRegressionErrorRatio
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{status=~"5.."}[15m]))
+              /
+              sum(rate(http_server_requests_seconds_count[15m]))
+            ) > 0.01
+          for: 20m
+          labels:
+            severity: warning
+            tier: release
+            team: "{{ $labels.team }}"
+            service: "{{ $labels.service }}"
+            pager_rotation: release-oncall
+          annotations:
+            summary: "Post-deployment error ratio regression"
+            description: "Error ratio exceeds guardrail after recent release."
+            runbook_url: "/runbooks/release/{{ $labels.service }}/post-deploy-regression"
+            dashboard_uid: "obs_l2_release_impact"
+            grafana_link: "/d/obs_l2_release_impact"

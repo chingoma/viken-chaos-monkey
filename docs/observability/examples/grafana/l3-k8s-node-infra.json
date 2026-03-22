@@ -1,0 +1,54 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Node CPU Usage",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Node Memory Usage",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Node Disk Usage",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"}-node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay\"})/node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"}" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Node Conditions",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "kube_node_status_condition{condition=~\"Ready|MemoryPressure|DiskPressure|PIDPressure\"}", "format": "table" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:triage", "kubernetes", "node-infra"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] K8s Node Infra - Is Cluster Capacity Safe?",
+  "uid": "obs_l3_k8s_node_infra",
+  "version": 1
+}

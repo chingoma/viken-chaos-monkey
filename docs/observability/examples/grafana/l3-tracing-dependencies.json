@@ -1,0 +1,49 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Span Request Rate",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(traces_spanmetrics_calls_total{service=\"$service\"}[5m])) by (span_name)" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Span Latency p95",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=\"$service\"}[5m])))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "text",
+      "title": "Trace Drilldown",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 8 },
+      "options": {
+        "content": "Use logs dashboard and open trace by `trace_id`.\\n\\nTempo datasource: `${DS_TEMPO}`.\\nRecommended flow: metrics -> logs -> trace -> runbook.",
+        "mode": "markdown"
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:analysis", "tracing", "dependencies"],
+  "templating": {
+    "list": [
+      { "name": "service", "label": "service", "type": "textbox", "query": "my-service" }
+    ]
+  },
+  "time": { "from": "now-3h", "to": "now" },
+  "title": "[L3] Service <service> Tracing - Where Is Latency Spent?",
+  "uid": "obs_l3_service_tracing",
+  "version": 1
+}

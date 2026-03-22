@@ -1,0 +1,38 @@
+grafana:
+  enabled: true
+
+  # Secret should provide:
+  # GRAFANA_ORG_ID, DS_PROMETHEUS, DS_LOKI, DS_TEMPO, PROMETHEUS_URL, LOKI_URL, TEMPO_URL
+  envFromSecret: grafana-observability-env
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      folderAnnotation: grafana_folder
+      searchNamespace: ALL
+      provider:
+        allowUiUpdates: true
+        foldersFromFilesStructure: false
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: ALL
+
+  # Keep datasources managed by sidecar/configmaps.
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources: []
+
+  # Optional hardening defaults for production posture.
+  grafana.ini:
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    unified_alerting:
+      enabled: true
+    alerting:
+      enabled: false

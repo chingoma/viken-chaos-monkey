@@ -1,0 +1,53 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Journey Start / Complete / Fail",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(business_journey_started_total{journey=\"$journey\"}[5m]))" },
+        { "refId": "B", "expr": "sum(rate(business_journey_completed_total{journey=\"$journey\"}[5m]))" },
+        { "refId": "C", "expr": "sum(rate(business_journey_failed_total{journey=\"$journey\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Journey Success Ratio",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(business_journey_completed_total{journey=\"$journey\"}[5m])) / sum(rate(business_journey_started_total{journey=\"$journey\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Journey Latency p95 and Stage Abandonment",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(business_journey_duration_seconds_bucket{journey=\"$journey\"}[5m])))" },
+        { "refId": "B", "expr": "sum(rate(business_journey_stage_total{journey=\"$journey\",outcome=\"abandoned\"}[5m])) by (stage)" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l2", "class:triage", "business-journey"],
+  "templating": {
+    "list": [
+      { "name": "journey", "label": "journey", "type": "query", "query": "label_values(business_journey_started_total, journey)", "refresh": 1 }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "[L2] Business Journey - Are Critical Flows Completing?",
+  "uid": "obs_l2_business_journey",
+  "version": 1
+}

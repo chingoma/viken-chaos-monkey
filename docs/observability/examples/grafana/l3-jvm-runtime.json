@@ -1,0 +1,52 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Heap vs Non-Heap Usage",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(jvm_memory_used_bytes{service=\"$service\",area=\"heap\"})" },
+        { "refId": "B", "expr": "sum(jvm_memory_used_bytes{service=\"$service\",area=\"nonheap\"})" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "GC Pause p95",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(jvm_gc_pause_seconds_bucket{service=\"$service\"}[5m])))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Executor + DB Pool Pressure",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "max(executor_queued_tasks{service=\"$service\"})" },
+        { "refId": "B", "expr": "max(hikaricp_connections_pending{service=\"$service\"})" },
+        { "refId": "C", "expr": "increase(hikaricp_connections_timeout_total{service=\"$service\"}[5m])" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:analysis", "jvm", "spring-boot"],
+  "templating": {
+    "list": [
+      { "name": "service", "label": "service", "type": "query", "query": "label_values(jvm_memory_used_bytes, service)", "refresh": 1 }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] Service <service> JVM - Is Runtime Saturated?",
+  "uid": "obs_l3_service_jvm",
+  "version": 1
+}

@@ -26,6 +26,17 @@ User and developer guides.
 Project planning and roadmap documentation.
 - [Enterprise Plan](planning/CHAOS_MONKEY_ENTERPRISE_PLAN.md) - Enterprise feature roadmap
 
+### 📈 Observability
+Production observability standards, dashboard strategy, and alerting guidance.
+- [Grafana Dashboard Strategy](observability/GRAFANA_DASHBOARD_STRATEGY.md) - Full dashboard model and rollout baseline
+- [Telemetry Contract](observability/TELEMETRY_CONTRACT.md) - Metrics/logs/traces standards and correlation
+- [Service Dashboard Template](observability/SERVICE_DASHBOARD_TEMPLATE.md) - Reusable L3 service dashboard standard
+- [Runtime and Dependency Dashboards](observability/RUNTIME_AND_DEPENDENCY_DASHBOARDS.md) - K8s, JVM, DB, cache, messaging views
+- [SLO and Alerting Standard](observability/SLO_AND_ALERTING_STANDARD.md) - SLI/SLO/error-budget and alert routing
+- [Release and Business Visibility](observability/RELEASE_AND_BUSINESS_VISIBILITY.md) - Deployment impact and critical journey design
+- [PromQL Library](observability/PROMQL_LIBRARY.md) - Production query examples for key panels
+- [Dashboard Catalog](observability/DASHBOARD_CATALOG.yaml) - Machine-readable dashboard inventory
+
 ### 📑 Index
 - [Documentation Index](INDEX.md) - Quick reference index of all documentation
 

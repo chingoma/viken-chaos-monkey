@@ -31,6 +31,10 @@ build/
 .DS_Store
 Thumbs.db
 
+# Local runtime / IDE output
+data/
+out/
+
 # Logs
 *.log
 

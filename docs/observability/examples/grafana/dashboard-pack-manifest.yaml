@@ -1,0 +1,161 @@
+pack: observability-baseline
+version: 1
+description: "Complete Grafana baseline pack for platform, service, runtime, dependency, SLO, release, security, and business journey visibility."
+dashboards:
+  - uid: obs_l1_platform_health
+    title: "[L1] Platform Global - Are We Healthy?"
+    file: l1-platform-global.json
+    folder: 00-Global
+    owners:
+      - platform
+      - sre
+
+  - uid: obs_l2_service_catalog
+    title: "[L2] Service Catalog - What Is Degraded?"
+    file: l2-service-catalog.json
+    folder: 02-Service-Catalog
+    owners:
+      - platform
+      - sre
+
+  - uid: obs_l3_service_health_template
+    title: "[L3] Service <service> - Why Is It Failing?"
+    file: l3-service-health-template.json
+    folder: 03-Services/<service-name>
+    owners:
+      - service-team
+      - sre
+
+  - uid: obs_l3_api_gateway
+    title: "[L3] API Gateway Edge - Is Traffic Reliable?"
+    file: l3-api-gateway.json
+    folder: 01-Edge
+    owners:
+      - platform
+      - edge-team
+
+  - uid: obs_l3_k8s_workload
+    title: "[L3] K8s Workload - Are Deployments Healthy?"
+    file: l3-k8s-workload.json
+    folder: 04-Kubernetes
+    owners:
+      - platform
+      - sre
+
+  - uid: obs_l3_k8s_pod_runtime
+    title: "[L3] K8s Pod Runtime - Which Pods Are Unstable?"
+    file: l3-k8s-pod-runtime.json
+    folder: 04-Kubernetes
+    owners:
+      - platform
+      - service-team
+
+  - uid: obs_l3_k8s_node_infra
+    title: "[L3] K8s Node Infra - Is Cluster Capacity Safe?"
+    file: l3-k8s-node-infra.json
+    folder: 04-Kubernetes
+    owners:
+      - platform
+      - sre
+
+  - uid: obs_l3_service_jvm
+    title: "[L3] Service <service> JVM - Is Runtime Saturated?"
+    file: l3-jvm-runtime.json
+    folder: 03-Services/<service-name>
+    owners:
+      - service-team
+      - sre
+
+  - uid: obs_l3_database
+    title: "[L3] Database - Are Queries and Pools Healthy?"
+    file: l3-database.json
+    folder: 05-Data-Platforms
+    owners:
+      - dba
+      - service-team
+
+  - uid: obs_l3_cache
+    title: "[L3] Cache - Are Hit Ratio and Latency Stable?"
+    file: l3-cache.json
+    folder: 05-Data-Platforms
+    owners:
+      - platform
+      - service-team
+
+  - uid: obs_l3_messaging
+    title: "[L3] Messaging - Is Lag or DLQ Growing?"
+    file: l3-messaging.json
+    folder: 05-Data-Platforms
+    owners:
+      - platform-messaging
+      - service-team
+
+  - uid: obs_l3_service_logs
+    title: "[L3] Service <service> Logs - What Failed?"
+    file: l3-logs-exceptions.json
+    folder: 03-Services/<service-name>
+    owners:
+      - service-team
+      - support
+
+  - uid: obs_l3_service_tracing
+    title: "[L3] Service <service> Tracing - Where Is Latency Spent?"
+    file: l3-tracing-dependencies.json
+    folder: 03-Services/<service-name>
+    owners:
+      - service-team
+      - sre
+
+  - uid: obs_l2_slo_budget
+    title: "[L2] SLO Error Budget - Are We Burning Too Fast?"
+    file: l2-slo-error-budget.json
+    folder: 00-Global
+    owners:
+      - sre
+      - platform
+
+  - uid: obs_l2_release_impact
+    title: "[L2] Release Impact - Did Change Break Reliability?"
+    file: l2-release-impact.json
+    folder: 00-Global
+    owners:
+      - sre
+      - release-manager
+
+  - uid: obs_l3_auth_iam
+    title: "[L3] Auth IAM Gateway - Is Access Healthy and Safe?"
+    file: l3-auth-iam-security.json
+    folder: 01-Edge
+    owners:
+      - iam-team
+      - security
+
+  - uid: obs_l2_business_journey
+    title: "[L2] Business Journey - Are Critical Flows Completing?"
+    file: l2-business-journey.json
+    folder: 06-Business
+    owners:
+      - product-engineering
+      - support
+
+datasources:
+  prometheus: DS_PROMETHEUS
+  loki: DS_LOKI
+  tempo: DS_TEMPO
+
+required_variables:
+  - environment
+  - cluster
+  - namespace
+  - service
+optional_variables:
+  - pod
+  - instance
+  - version
+  - endpoint
+  - method
+  - status_code
+  - node
+  - topic
+  - queue
+  - consumer_group
