@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+  - grafana-env-secret.example.yaml
+
+patchesStrategicMerge:
+  - grafana-deployment-patch.yaml
+
+configMapGenerator:
+  - name: grafana-datasources-provisioning
+    files:
+      - datasources.yaml=../grafana/provisioning/datasources/datasources-template.yaml
+
+  - name: grafana-dashboards-provisioning
+    files:
+      - providers.yaml=../grafana/provisioning/dashboards/providers.yaml
+
+  - name: grafana-observability-dashboards
+    files:
+      - l1-platform-global.json=../../grafana/l1-platform-global.json
+      - l2-service-catalog.json=../../grafana/l2-service-catalog.json
+      - l2-slo-error-budget.json=../../grafana/l2-slo-error-budget.json
+      - l2-release-impact.json=../../grafana/l2-release-impact.json
+      - l2-business-journey.json=../../grafana/l2-business-journey.json
+      - l3-service-health-template.json=../../grafana/l3-service-health-template.json
+      - l3-jvm-runtime.json=../../grafana/l3-jvm-runtime.json
+      - l3-logs-exceptions.json=../../grafana/l3-logs-exceptions.json
+      - l3-tracing-dependencies.json=../../grafana/l3-tracing-dependencies.json
+      - l3-api-gateway.json=../../grafana/l3-api-gateway.json
+      - l3-auth-iam-security.json=../../grafana/l3-auth-iam-security.json
+      - l3-k8s-workload.json=../../grafana/l3-k8s-workload.json
+      - l3-k8s-pod-runtime.json=../../grafana/l3-k8s-pod-runtime.json
+      - l3-k8s-node-infra.json=../../grafana/l3-k8s-node-infra.json
+      - l3-database.json=../../grafana/l3-database.json
+      - l3-cache.json=../../grafana/l3-cache.json
+      - l3-messaging.json=../../grafana/l3-messaging.json
+
+generatorOptions:
+  disableNameSuffixHash: true

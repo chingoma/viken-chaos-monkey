@@ -9,12 +9,10 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import viken.chaos.monkey.common.util.Uuid7Generator;
 
 import java.io.IOException;
 
-/**
- * Filter to assign and propagate correlation ID (requestId) per enterprise guidelines.
- */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {
@@ -28,7 +26,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         try {
             String requestId = request.getHeader(REQUEST_ID_HEADER);
             if (requestId == null || requestId.isBlank()) {
-                requestId = java.util.UUID.randomUUID().toString();
+                requestId = Uuid7Generator.generateString();
             }
             MDC.put(MDC_KEY, requestId);
             response.setHeader(REQUEST_ID_HEADER, requestId);

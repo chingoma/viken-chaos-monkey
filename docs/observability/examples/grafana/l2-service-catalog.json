@@ -1,0 +1,141 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "id": null,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{environment=\"$environment\"}[5m])) by (service)",
+          "format": "table",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{environment=\"$environment\",status=~\"5..\"}[5m])) by (service) / sum(rate(http_server_requests_seconds_count{environment=\"$environment\"}[5m])) by (service)",
+          "format": "table",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (service, le) (rate(http_server_requests_seconds_bucket{environment=\"$environment\"}[5m])))",
+          "format": "table",
+          "refId": "C"
+        }
+      ],
+      "title": "Service Health Table (Traffic, Error Ratio, p95)",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "service",
+            "mode": "outer"
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(http_server_requests_seconds_count{environment=\"$environment\",status=~\"5..\"}[5m])) by (service) / sum(rate(http_server_requests_seconds_count{environment=\"$environment\"}[5m])) by (service))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Error Ratio Services",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "topk(10, histogram_quantile(0.95, sum by (service, le) (rate(http_server_requests_seconds_bucket{environment=\"$environment\"}[5m]))))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 p95 Latency Services",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "tier:l2",
+    "class:triage",
+    "env-aware"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "prod",
+          "value": "prod"
+        },
+        "label": "environment",
+        "name": "environment",
+        "query": "label_values(http_server_requests_seconds_count, environment)",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "title": "[L2] Service Catalog - What Is Degraded?",
+  "uid": "obs_l2_service_catalog",
+  "version": 1
+}

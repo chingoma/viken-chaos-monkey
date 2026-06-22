@@ -1,0 +1,361 @@
+version: 1
+default_variables:
+  required:
+    - environment
+    - cluster
+    - namespace
+    - service
+  optional:
+    - pod
+    - instance
+    - version
+    - endpoint
+    - method
+    - status_code
+    - node
+    - topic
+    - queue
+    - consumer_group
+
+dashboards:
+  - uid: obs_l1_platform_health
+    title: "[L1] Platform Global - Are We Healthy?"
+    folder: "00-Global"
+    class: triage
+    audience: ["incident-commander", "sre-lead", "engineering-leadership"]
+    purpose: "Provide 60-second platform health and risk concentration."
+    key_questions:
+      - "Is customer-impacting degradation active?"
+      - "Which service/team is burning reliability budget?"
+    panel_groups:
+      - "Global SLO compliance (today/7d/30d)"
+      - "Top service error budget burners"
+      - "Global request/error/latency RED"
+      - "Cluster pressure rollup"
+      - "Active alerts by severity"
+      - "Deployment markers and incident timeline"
+    watch_points:
+      - "Global 5xx > baseline and rising p95/p99"
+      - "Any critical service burn-rate > 2x"
+    alert_worthy:
+      - "multi-window burn-rate violation"
+      - "multi-service ingress 5xx surge"
+    dashboard_only:
+      - "Long-horizon trends for leadership and capacity planning"
+    drilldown:
+      - "to:obs_l2_service_catalog"
+
+  - uid: obs_l2_service_catalog
+    title: "[L2] Service Catalog - What Is Degraded?"
+    folder: "02-Service-Catalog"
+    class: triage
+    audience: ["sre", "platform", "oncall-developer"]
+    purpose: "Fleet-wide service health with ownership context."
+    key_questions:
+      - "Which service is degraded right now?"
+      - "Is degradation caused by rollout, dependency, or platform saturation?"
+    panel_groups:
+      - "Service RAG table (availability, p95, error%, burn-rate, owner)"
+      - "Top regressions (latency/error deltas)"
+      - "Dependency risk heatmap"
+      - "Unhealthy probes and restart hotspots"
+      - "Version skew map"
+    watch_points:
+      - "Healthy pods but high 5xx indicates logical failure"
+      - "Version skew correlating with errors"
+    alert_worthy:
+      - "service-level sustained SLO breach risk"
+      - "high error ratio sustained per critical service"
+    dashboard_only:
+      - "Service score trend over 7d/30d"
+    drilldown:
+      - "to:obs_l3_service_health_standard"
+
+  - uid: obs_l3_service_health_standard
+    title: "[L3] Service <service> - Why Is It Failing?"
+    folder: "03-Services/<service-name>"
+    class: triage
+    audience: ["service-owner", "oncall", "sre"]
+    purpose: "Primary service-level incident triage dashboard."
+    key_questions:
+      - "Is the service failing due to app, infra, or dependency?"
+      - "Did a release trigger the regression?"
+    panel_groups:
+      - "Snapshot tiles (RPS, error%, p50/p95/p99, saturation, version)"
+      - "RED by endpoint group"
+      - "CPU throttling, memory pressure, threads, DB pool"
+      - "Dependencies (HTTP, DB, cache, messaging) latency/errors"
+      - "Deployment markers and version timeline"
+      - "Drilldowns to logs, traces, pod runtime, runbook"
+    watch_points:
+      - "Latency rise without traffic change"
+      - "Endpoint-localized error spikes"
+      - "CPU throttling with latency correlation"
+    alert_worthy:
+      - "SLO-derived 5xx breach sustained"
+      - "p95/p99 objective breach sustained"
+      - "Dependency failure crossing resilience threshold"
+    dashboard_only:
+      - "p50 trend and low volume endpoint fluctuations"
+    drilldown:
+      - "to:obs_l4_api_endpoint"
+      - "to:obs_l3_service_logs"
+      - "to:obs_l3_service_tracing"
+
+  - uid: obs_l4_api_endpoint
+    title: "[L4] Service <service> API - Which Endpoint Regressed?"
+    folder: "03-Services/<service-name>"
+    class: analysis
+    audience: ["api-engineer", "performance-engineer", "service-owner"]
+    purpose: "Endpoint-level performance and error hotspot analysis."
+    key_questions:
+      - "Which endpoint or method regressed after change?"
+      - "Which status classes dominate endpoint failures?"
+    panel_groups:
+      - "Endpoint RED table (route/method/status_class)"
+      - "p95/p99 latency per endpoint"
+      - "Error ratio and top status codes per endpoint"
+      - "Payload/response size panel (if instrumented)"
+      - "Slowest endpoints with release overlays"
+    watch_points:
+      - "Use templated routes only"
+      - "Critical endpoint latency/error drift"
+    alert_worthy:
+      - "Critical endpoint SLI breach"
+    dashboard_only:
+      - "Long-tail endpoint comparison"
+    drilldown:
+      - "to:obs_l3_service_logs"
+      - "to:obs_l3_service_tracing"
+
+  - uid: obs_l3_api_gateway
+    title: "[L3] API Gateway Edge - Is Traffic Reliable?"
+    folder: "01-Edge"
+    class: triage
+    audience: ["platform", "edge-team", "sre"]
+    purpose: "Observe edge errors, latency, rejections, and upstream failures."
+    panel_groups:
+      - "Ingress/Gateway RED"
+      - "Upstream latency and upstream error ratio"
+      - "Rate-limit and rejection counts"
+      - "Authn/Authz failures at edge"
+      - "Upstream service breakdown"
+    alert_worthy:
+      - "Sustained edge 5xx affecting multiple services"
+      - "Abnormal rejection spikes"
+    drilldown:
+      - "to:obs_l2_service_catalog"
+      - "to:obs_l3_auth_iam"
+
+  - uid: obs_l3_auth_iam
+    title: "[L3] Auth IAM Gateway - Is Access Healthy and Safe?"
+    folder: "01-Edge"
+    class: triage
+    audience: ["iam-team", "security", "platform", "sre"]
+    purpose: "Monitor authentication reliability and suspicious access patterns."
+    panel_groups:
+      - "Auth success/failure rate"
+      - "Token validation failures by cause"
+      - "401/403 trends by route/client"
+      - "Rate-limit and policy rejection patterns"
+      - "Suspicious bursts by client/source"
+    alert_worthy:
+      - "Auth failure surges"
+      - "Token validation anomaly spikes"
+      - "Unexpected rejection pattern changes"
+
+  - uid: obs_l3_k8s_workload
+    title: "[L3] K8s Workload - Are Deployments Healthy?"
+    folder: "04-Kubernetes"
+    class: triage
+    audience: ["platform", "sre"]
+    purpose: "Deployment-level health and scaling status."
+    panel_groups:
+      - "Desired vs available replicas"
+      - "Rollout status and unavailable replicas"
+      - "HPA desired/current replicas"
+      - "Namespace saturation (request vs usage)"
+      - "Readiness/liveness failures and restarts"
+      - "Pending pods with scheduling reasons"
+    alert_worthy:
+      - "Desired != available sustained"
+      - "Repeated readiness/liveness failures"
+      - "Crashloop growth trend"
+    drilldown:
+      - "to:obs_l3_k8s_pod_runtime"
+      - "to:obs_l3_k8s_node_infra"
+
+  - uid: obs_l3_k8s_pod_runtime
+    title: "[L3] K8s Pod Runtime - Which Pods Are Unstable?"
+    folder: "04-Kubernetes"
+    class: triage
+    audience: ["service-owner", "platform", "sre"]
+    purpose: "Per-pod runtime instability and resource fault isolation."
+    panel_groups:
+      - "Pod CPU vs limit and throttling ratio"
+      - "Memory working set vs limit and OOM risk"
+      - "Restart counts and termination reasons"
+      - "Container network/filesystem errors"
+    alert_worthy:
+      - "CrashLoopBackOff recurrence"
+      - "OOM kills on critical workloads"
+
+  - uid: obs_l3_k8s_node_infra
+    title: "[L3] K8s Node Infra - Is Cluster Capacity Safe?"
+    folder: "04-Kubernetes"
+    class: triage
+    audience: ["platform", "sre"]
+    purpose: "Node health and pressure detection."
+    panel_groups:
+      - "Node CPU/memory/disk/network utilization"
+      - "Node conditions (Ready/MemoryPressure/DiskPressure/PIDPressure)"
+      - "Allocatable saturation and pod density"
+      - "Control-plane and DNS health (if exposed)"
+    alert_worthy:
+      - "Node not ready"
+      - "Sustained node pressure"
+      - "Disk saturation risk"
+
+  - uid: obs_l3_service_jvm
+    title: "[L3] Service <service> JVM - Is Runtime Saturated?"
+    folder: "03-Services/<service-name>"
+    class: analysis
+    audience: ["java-developer", "service-owner", "sre"]
+    purpose: "JVM and Spring runtime saturation and bottleneck analysis."
+    panel_groups:
+      - "Heap/non-heap usage and allocation rate"
+      - "GC pause/frequency/overhead"
+      - "Thread states and blocked/waiting"
+      - "Executor pool active/queued/rejected"
+      - "Hikari active/idle/pending/timeout"
+      - "HTTP server/client RED"
+      - "Resilience retries/circuit/timeouts/bulkheads"
+    alert_worthy:
+      - "GC pause inflation with latency impact"
+      - "Connection pool pending/timeout growth"
+      - "Executor rejection spikes"
+
+  - uid: obs_l3_database
+    title: "[L3] Database - Are Queries and Pools Healthy?"
+    folder: "05-Data-Platforms"
+    class: triage
+    audience: ["dba", "service-owner", "sre"]
+    purpose: "Database as dependency bottleneck visibility."
+    panel_groups:
+      - "Query latency and throughput"
+      - "Connection utilization and wait"
+      - "Lock waits/deadlocks"
+      - "Replication lag"
+      - "DB error and timeout rates"
+    alert_worthy:
+      - "Connection exhaustion risk"
+      - "Deadlock spikes"
+      - "Replication lag beyond objective"
+
+  - uid: obs_l3_cache
+    title: "[L3] Cache - Are Hit Ratio and Latency Stable?"
+    folder: "05-Data-Platforms"
+    class: triage
+    audience: ["service-owner", "platform", "sre"]
+    purpose: "Cache efficiency and latency health."
+    panel_groups:
+      - "Hit/miss ratio and volume"
+      - "Command latency and timeout rate"
+      - "Memory usage, evictions, fragmentation"
+      - "Connection counts and blocked clients"
+    alert_worthy:
+      - "Sustained miss spike + DB pressure"
+      - "Cache timeout and latency surge"
+
+  - uid: obs_l3_messaging
+    title: "[L3] Messaging - Is Lag or DLQ Growing?"
+    folder: "05-Data-Platforms"
+    class: triage
+    audience: ["platform-messaging", "service-owner", "sre"]
+    purpose: "Observe async system throughput and reliability."
+    panel_groups:
+      - "Publish vs consume rates"
+      - "Lag by consumer group/topic/partition"
+      - "Failed processing and retry volumes"
+      - "DLQ growth"
+      - "Handler latency"
+      - "Poison message indicators"
+    alert_worthy:
+      - "Lag runaway"
+      - "DLQ sustained growth"
+      - "Critical handler latency breach"
+
+  - uid: obs_l3_service_logs
+    title: "[L3] Service <service> Logs - What Failed?"
+    folder: "03-Services/<service-name>"
+    class: analysis
+    audience: ["oncall", "service-owner", "support"]
+    purpose: "Error evidence and exception pattern analysis."
+    panel_groups:
+      - "Error volume by severity/service/version"
+      - "Top exception classes and trend"
+      - "Log lines with trace links"
+      - "Deploy-window error diff"
+    alert_worthy:
+      - "Novel critical exception spikes"
+    dashboard_only:
+      - "Long-tail error browsing"
+
+  - uid: obs_l3_service_tracing
+    title: "[L3] Service <service> Tracing - Where Is Latency Spent?"
+    folder: "03-Services/<service-name>"
+    class: analysis
+    audience: ["service-owner", "sre", "platform"]
+    purpose: "Trace-level dependency and critical path visibility."
+    panel_groups:
+      - "Service dependency graph"
+      - "Top slow spans and span error rates"
+      - "Trace sample explorer by route/status/version"
+      - "Upstream/downstream latency contribution"
+    alert_worthy:
+      - "Dependency latency surge affecting critical paths"
+
+  - uid: obs_l2_slo_budget
+    title: "[L2] SLO Error Budget - Are We Burning Too Fast?"
+    folder: "00-Global"
+    class: triage
+    audience: ["sre", "eng-lead", "service-owner"]
+    purpose: "Reliability governance via SLI/SLO and error budget controls."
+    panel_groups:
+      - "SLI status by critical service/journey"
+      - "Error budget remaining"
+      - "Fast and slow burn-rate"
+      - "Objective attainment trend by environment"
+      - "Breach forecast"
+    alert_worthy:
+      - "Multi-window burn-rate violations"
+
+  - uid: obs_l2_release_impact
+    title: "[L2] Release Impact - Did Change Break Reliability?"
+    folder: "00-Global"
+    class: triage
+    audience: ["release-manager", "service-owner", "sre"]
+    purpose: "Release regression detection and rollback guidance."
+    panel_groups:
+      - "Deployment markers by service/version"
+      - "Before/after latency comparison"
+      - "Before/after error ratio comparison"
+      - "Canary vs baseline comparison"
+      - "Rollback indicator and recovery signal"
+    alert_worthy:
+      - "Post-deploy guardrail violation"
+
+  - uid: obs_l2_business_journey
+    title: "[L2] Business Journey - Are Critical Flows Completing?"
+    folder: "06-Business"
+    class: triage
+    audience: ["product-engineering", "leadership", "support", "sre"]
+    purpose: "Track user-visible transaction success and latency."
+    panel_groups:
+      - "Journey start/completion/failure rates"
+      - "Journey latency p95/p99"
+      - "Stage funnel completion/abandonment"
+      - "Failure reason and dependency contribution"
+    alert_worthy:
+      - "Journey SLI breach"
+      - "Abandonment anomaly"

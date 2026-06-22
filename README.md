@@ -42,7 +42,7 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=dev --
 ## Example: Trigger Chaos
 
 ```bash
-curl -X POST http://localhost:8080/api/chaos/experiments \
+curl -X POST http://localhost:20000/api/chaos/experiments \
   -u chaos-operator:change-me-operator \
   -H "Content-Type: application/json" \
   -d '{
@@ -56,6 +56,11 @@ curl -X POST http://localhost:8080/api/chaos/experiments \
 ## Configuration
 
 See `application.properties` for configuration options.
+
+## Swagger UI
+
+- Swagger UI: `http://localhost:20000/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:20000/v3/api-docs`
 
 ## 📚 Documentation
 

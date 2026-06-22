@@ -6,17 +6,21 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tz.dse.trading.core.api.ApiPayloadCode;
 import viken.chaos.monkey.common.dto.ChaosExperimentRequest;
-import viken.chaos.monkey.common.response.ResponseCodes;
 import viken.chaos.monkey.modules.chaos.adapters.ChaosAdapter;
 import viken.chaos.monkey.modules.chaos.audit.ChaosAuditService;
 import viken.chaos.monkey.modules.chaos.audit.ChaosMetricsService;
+import viken.chaos.monkey.modules.chaos.core.service.impl.ChaosOrchestrationServiceImpl;
+import viken.chaos.monkey.modules.chaos.core.ChaosStateRepository;
+import viken.chaos.monkey.modules.chaos.core.store.FileChaosStateStore;
 import viken.chaos.monkey.modules.chaos.safety.ChaosSafetyProperties;
 import viken.chaos.monkey.modules.chaos.safety.ChaosSafetyService;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +40,7 @@ class ChaosOrchestrationServiceTest {
 
     private ChaosSafetyProperties safetyProperties;
     private ChaosStateRepository stateRepository;
+    private FileChaosStateStore stateStore;
     private ChaosSafetyService safetyService;
     private ChaosMetricsService metricsService;
     private ChaosAuditService auditService;
@@ -53,11 +58,10 @@ class ChaosOrchestrationServiceTest {
         stateRepository = new ChaosStateRepository(
                 objectMapper,
                 tempDir.resolve("chaos-state.json").toString(),
-                safetyProperties
-        );
+                safetyProperties);
         stateRepository.initialize();
-
-        safetyService = new ChaosSafetyService(safetyProperties, stateRepository);
+        stateStore = new FileChaosStateStore(stateRepository);
+        safetyService = new ChaosSafetyService(safetyProperties, stateStore, Optional.empty());
         metricsService = mock(ChaosMetricsService.class);
         auditService = mock(ChaosAuditService.class);
         executionExecutor = Executors.newSingleThreadExecutor();
@@ -70,55 +74,40 @@ class ChaosOrchestrationServiceTest {
 
     @Test
     void executeRejectsBlastRadiusAboveConfiguredLimit() {
-        ChaosOrchestrationService service = new ChaosOrchestrationService(
-                safetyService,
-                List.of(new NoOpAdapter()),
-                metricsService,
-                auditService,
-                stateRepository,
-                executionExecutor
-        );
+        ChaosOrchestrationServiceImpl service = newService(List.of(new NoOpAdapter()));
 
         ChaosExperimentRequest request = new ChaosExperimentRequest(
-                "pod-kill",
-                "order-service",
-                "default",
-                Map.of("blastRadius", "30")
-        );
+                "pod-kill", "order-service", "default", Map.of("blastRadius", "30"));
 
-        ChaosOrchestrationService.ChaosExecutionResult result = service.execute(request);
-        assertEquals(ResponseCodes.BLAST_RADIUS_EXCEEDED, result.code());
+        var result = service.execute(request, "tester");
+        assertEquals(ApiPayloadCode.VALIDATION_ERROR.getCode(), result.code());
     }
 
     @Test
     void abortMarksRunningExperimentAsAborted() throws Exception {
         BlockingAdapter adapter = new BlockingAdapter();
-        ChaosOrchestrationService service = new ChaosOrchestrationService(
-                safetyService,
-                List.of(adapter),
-                metricsService,
-                auditService,
-                stateRepository,
-                executionExecutor
-        );
+        ChaosOrchestrationServiceImpl service = newService(List.of(adapter));
 
         ChaosExperimentRequest request = new ChaosExperimentRequest(
-                "pod-kill",
-                "order-service",
-                "default",
-                Map.of("blastRadius", "1")
-        );
+                "pod-kill", "order-service", "default", Map.of("blastRadius", "1"));
 
-        ChaosOrchestrationService.ChaosExecutionResult startResult = service.execute(request);
+        var startResult = service.execute(request, "tester");
         assertNotNull(startResult.data());
         assertTrue(adapter.started.await(2, TimeUnit.SECONDS));
 
         String experimentId = startResult.data().experimentId();
-        ChaosOrchestrationService.AbortResult abortResult = service.abortExperiment(experimentId);
+        var abortResult = service.abortExperiment(experimentId, "operator");
         assertTrue(abortResult.aborted());
         assertEquals("ABORTED", service.getExperiment(experimentId).status());
         verify(auditService, timeout(1000)).auditExperimentFailed(
                 experimentId, "pod-kill", "order-service", "Aborted by operator");
+    }
+
+    private ChaosOrchestrationServiceImpl newService(List<ChaosAdapter> adapters) {
+        return new ChaosOrchestrationServiceImpl(
+                safetyService, Optional.empty(), Optional.empty(),
+                adapters, metricsService, auditService, stateStore,
+                executionExecutor, "LOCAL");
     }
 
     private static final class NoOpAdapter implements ChaosAdapter {

@@ -1,0 +1,61 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: Prometheus
+    orgId: $__env{GRAFANA_ORG_ID}
+  - name: Loki
+    orgId: $__env{GRAFANA_ORG_ID}
+  - name: Tempo
+    orgId: $__env{GRAFANA_ORG_ID}
+
+datasources:
+  - name: Prometheus
+    uid: $__env{DS_PROMETHEUS}
+    type: prometheus
+    access: proxy
+    orgId: $__env{GRAFANA_ORG_ID}
+    url: $__env{PROMETHEUS_URL}
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestinations:
+        - datasourceUid: $__env{DS_TEMPO}
+          name: trace_id
+
+  - name: Loki
+    uid: $__env{DS_LOKI}
+    type: loki
+    access: proxy
+    orgId: $__env{GRAFANA_ORG_ID}
+    url: $__env{LOKI_URL}
+    editable: true
+    jsonData:
+      maxLines: 2000
+      derivedFields:
+        - name: TraceID
+          matcherRegex: "\"trace_id\":\"([a-fA-F0-9]+)\""
+          datasourceUid: $__env{DS_TEMPO}
+          url: "$${__value.raw}"
+          urlDisplayLabel: "View Trace"
+
+  - name: Tempo
+    uid: $__env{DS_TEMPO}
+    type: tempo
+    access: proxy
+    orgId: $__env{GRAFANA_ORG_ID}
+    url: $__env{TEMPO_URL}
+    editable: true
+    jsonData:
+      httpMethod: GET
+      tracesToLogsV2:
+        datasourceUid: $__env{DS_LOKI}
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags:
+          - key: service
+            value: service
+      serviceMap:
+        datasourceUid: $__env{DS_PROMETHEUS}

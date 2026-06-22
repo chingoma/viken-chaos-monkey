@@ -1,0 +1,51 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Gateway Request Rate",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{environment=\"$environment\",service=~\"gateway|ingress\"}[5m])) by (service)" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Gateway 4xx/5xx Ratio",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{environment=\"$environment\",service=~\"gateway|ingress\",status=~\"4..\"}[5m])) / sum(rate(http_server_requests_seconds_count{environment=\"$environment\",service=~\"gateway|ingress\"}[5m]))" },
+        { "refId": "B", "expr": "sum(rate(http_server_requests_seconds_count{environment=\"$environment\",service=~\"gateway|ingress\",status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{environment=\"$environment\",service=~\"gateway|ingress\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Rate Limit / Rejections",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(gateway_rate_limit_rejections_total{environment=\"$environment\"}[5m])) by (route)" }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["tier:l3", "class:triage", "edge", "env-aware"],
+  "templating": {
+    "list": [
+      { "name": "environment", "label": "environment", "type": "query", "query": "label_values(http_server_requests_seconds_count, environment)", "refresh": 1, "current": { "text": "prod", "value": "prod", "selected": true } }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] API Gateway Edge - Is Traffic Reliable?",
+  "uid": "obs_l3_api_gateway",
+  "version": 1
+}

@@ -1,0 +1,32 @@
+groups:
+  - name: viken-chaos-monkey
+    rules:
+      - alert: ChaosKillSwitchActivated
+        expr: chaos_kill_switch_active == 1
+        for: 1m
+        labels:
+          severity: critical
+          service: viken-chaos-monkey
+        annotations:
+          summary: "Chaos kill switch is active"
+          description: "Emergency kill switch engaged — all chaos experiments blocked."
+
+      - alert: ChaosExperimentFailureSpike
+        expr: increase(chaos_experiments_failed_total[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: viken-chaos-monkey
+        annotations:
+          summary: "Chaos experiment failure spike"
+          description: "More than 5 failed chaos experiments in 15 minutes."
+
+      - alert: ChaosSchedulerRunInProd
+        expr: chaos_experiments_total{status="RUNNING"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: viken-chaos-monkey
+        annotations:
+          summary: "Chaos experiment running — verify environment policy"
+          description: "Active chaos experiment detected; confirm this is an approved drill."

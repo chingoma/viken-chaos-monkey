@@ -1,0 +1,41 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Error Logs by Level",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "refId": "A", "expr": "sum by (level) (count_over_time({service=\"$service\",environment=\"$environment\"} |= \"error\" [5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "Recent Exceptions (with trace_id)",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        { "refId": "A", "expr": "{service=\"$service\",environment=\"$environment\"} |= \"Exception\"" }
+      ],
+      "options": { "showLabels": true, "sortOrder": "Descending", "wrapLogMessage": true }
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:analysis", "logs", "exceptions"],
+  "templating": {
+    "list": [
+      { "name": "environment", "label": "environment", "type": "textbox", "query": "prod" },
+      { "name": "service", "label": "service", "type": "textbox", "query": "my-service" }
+    ]
+  },
+  "time": { "from": "now-3h", "to": "now" },
+  "title": "[L3] Service <service> Logs - What Failed?",
+  "uid": "obs_l3_service_logs",
+  "version": 1
+}

@@ -1,0 +1,51 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "DB Query Throughput",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(db_client_requests_seconds_count{service=\"$service\"}[5m])) by (operation)" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "DB Latency p95",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(db_client_requests_seconds_bucket{service=\"$service\"}[5m])))" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Connection Pool Pressure",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "max(hikaricp_connections_active{service=\"$service\"})" },
+        { "refId": "B", "expr": "max(hikaricp_connections_pending{service=\"$service\"})" },
+        { "refId": "C", "expr": "increase(hikaricp_connections_timeout_total{service=\"$service\"}[5m])" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:triage", "database"],
+  "templating": {
+    "list": [
+      { "name": "service", "label": "service", "type": "query", "query": "label_values(hikaricp_connections_active, service)", "refresh": 1 }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] Database - Are Queries and Pools Healthy?",
+  "uid": "obs_l3_database",
+  "version": 1
+}

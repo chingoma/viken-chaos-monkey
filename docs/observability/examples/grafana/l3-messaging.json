@@ -1,0 +1,55 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Publish vs Consume Rate",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(app_messaging_publish_total{service=\"$service\",topic=~\"$topic\"}[5m])) by (topic)" },
+        { "refId": "B", "expr": "sum(rate(app_messaging_consume_total{service=\"$service\",topic=~\"$topic\",consumer_group=~\"$consumer_group\"}[5m])) by (topic,consumer_group)" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Consumer Lag",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(kafka_consumergroup_lag{topic=~\"$topic\",consumergroup=~\"$consumer_group\",environment=\"$environment\"}) by (topic,consumergroup)" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Retry / DLQ / Handler Latency",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(app_messaging_retry_total{service=\"$service\"}[15m])) by (handler)" },
+        { "refId": "B", "expr": "sum(increase(app_messaging_dlq_messages_total{service=\"$service\"}[15m])) by (queue)" },
+        { "refId": "C", "expr": "histogram_quantile(0.95, sum by (le, handler) (rate(app_messaging_handler_seconds_bucket{service=\"$service\"}[5m])))" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:triage", "messaging"],
+  "templating": {
+    "list": [
+      { "name": "environment", "label": "environment", "type": "query", "query": "label_values(kafka_consumergroup_lag, environment)", "refresh": 1 },
+      { "name": "service", "label": "service", "type": "query", "query": "label_values(app_messaging_publish_total, service)", "refresh": 1 },
+      { "name": "topic", "label": "topic", "type": "query", "query": "label_values(kafka_consumergroup_lag, topic)", "refresh": 1, "includeAll": true },
+      { "name": "consumer_group", "label": "consumer_group", "type": "query", "query": "label_values(kafka_consumergroup_lag, consumergroup)", "refresh": 1, "includeAll": true }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] Messaging - Is Lag or DLQ Growing?",
+  "uid": "obs_l3_messaging",
+  "version": 1
+}

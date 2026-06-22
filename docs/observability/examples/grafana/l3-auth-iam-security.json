@@ -1,0 +1,51 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Auth Success vs Failure",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(auth_requests_total{environment=\"$environment\",outcome=\"success\"}[5m]))" },
+        { "refId": "B", "expr": "sum(rate(auth_requests_total{environment=\"$environment\",outcome=\"failure\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "401 / 403 Trends",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(http_server_requests_seconds_count{service=~\"gateway|iam\",status=~\"401|403\"}[5m])) by (status,route)" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Rate Limit and Rejections",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(gateway_rate_limit_rejections_total{environment=\"$environment\"}[5m])) by (route,client)" },
+        { "refId": "B", "expr": "sum(rate(token_validation_failures_total{environment=\"$environment\"}[5m])) by (reason)" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:triage", "auth", "security"],
+  "templating": {
+    "list": [
+      { "name": "environment", "label": "environment", "type": "query", "query": "label_values(auth_requests_total, environment)", "refresh": 1 }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] Auth IAM Gateway - Is Access Healthy and Safe?",
+  "uid": "obs_l3_auth_iam",
+  "version": 1
+}

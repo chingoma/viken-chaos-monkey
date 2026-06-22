@@ -1,0 +1,52 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "CPU Usage vs Throttling",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m])) by (pod)" },
+        { "refId": "B", "expr": "sum(rate(container_cpu_cfs_throttled_periods_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m])) / sum(rate(container_cpu_cfs_periods_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m]))" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Memory Working Set vs Limit",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"$pod\"}) by (pod)" },
+        { "refId": "B", "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"$pod\",resource=\"memory\"}) by (pod)" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Restart / Termination Reason",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\",pod=~\"$pod\"}[1h])) by (pod,container)", "format": "table" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "tags": ["tier:l3", "class:triage", "kubernetes", "pod-runtime"],
+  "templating": {
+    "list": [
+      { "name": "namespace", "label": "namespace", "type": "query", "query": "label_values(kube_pod_info, namespace)", "refresh": 1 },
+      { "name": "pod", "label": "pod", "type": "query", "query": "label_values(kube_pod_info{namespace=\"$namespace\"}, pod)", "refresh": 1, "includeAll": true }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "[L3] K8s Pod Runtime - Which Pods Are Unstable?",
+  "uid": "obs_l3_k8s_pod_runtime",
+  "version": 1
+}

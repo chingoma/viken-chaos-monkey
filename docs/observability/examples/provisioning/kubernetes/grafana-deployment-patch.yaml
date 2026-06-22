@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      containers:
+        - name: grafana
+          envFrom:
+            - secretRef:
+                name: grafana-observability-env
+          volumeMounts:
+            - name: grafana-datasources-provisioning
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboards-provisioning
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-dashboards-json
+              mountPath: /var/lib/grafana/dashboards
+      volumes:
+        - name: grafana-datasources-provisioning
+          configMap:
+            name: grafana-datasources-provisioning
+        - name: grafana-dashboards-provisioning
+          configMap:
+            name: grafana-dashboards-provisioning
+        - name: grafana-dashboards-json
+          configMap:
+            name: grafana-observability-dashboards
+            items:
+              - key: l1-platform-global.json
+                path: 00-Global/l1-platform-global.json
+              - key: l2-service-catalog.json
+                path: 02-Service-Catalog/l2-service-catalog.json
+              - key: l2-slo-error-budget.json
+                path: 00-Global/l2-slo-error-budget.json
+              - key: l2-release-impact.json
+                path: 00-Global/l2-release-impact.json
+              - key: l2-business-journey.json
+                path: 06-Business/l2-business-journey.json
+              - key: l3-service-health-template.json
+                path: 03-Services/l3-service-health-template.json
+              - key: l3-jvm-runtime.json
+                path: 03-Services/l3-jvm-runtime.json
+              - key: l3-logs-exceptions.json
+                path: 03-Services/l3-logs-exceptions.json
+              - key: l3-tracing-dependencies.json
+                path: 03-Services/l3-tracing-dependencies.json
+              - key: l3-api-gateway.json
+                path: 01-Edge/l3-api-gateway.json
+              - key: l3-auth-iam-security.json
+                path: 01-Edge/l3-auth-iam-security.json
+              - key: l3-k8s-workload.json
+                path: 04-Kubernetes/l3-k8s-workload.json
+              - key: l3-k8s-pod-runtime.json
+                path: 04-Kubernetes/l3-k8s-pod-runtime.json
+              - key: l3-k8s-node-infra.json
+                path: 04-Kubernetes/l3-k8s-node-infra.json
+              - key: l3-database.json
+                path: 05-Data-Platforms/l3-database.json
+              - key: l3-cache.json
+                path: 05-Data-Platforms/l3-cache.json
+              - key: l3-messaging.json
+                path: 05-Data-Platforms/l3-messaging.json

@@ -1,0 +1,88 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+configMapGenerator:
+  - name: grafana-observability-datasources
+    options:
+      labels:
+        grafana_datasource: "1"
+    files:
+      - datasources.yaml=../../grafana/provisioning/datasources/datasources-template.yaml
+
+  - name: grafana-observability-global-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 00-Global
+    files:
+      - l1-platform-global.json=../../../grafana/l1-platform-global.json
+      - l2-slo-error-budget.json=../../../grafana/l2-slo-error-budget.json
+      - l2-release-impact.json=../../../grafana/l2-release-impact.json
+
+  - name: grafana-observability-edge-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 01-Edge
+    files:
+      - l3-api-gateway.json=../../../grafana/l3-api-gateway.json
+      - l3-auth-iam-security.json=../../../grafana/l3-auth-iam-security.json
+
+  - name: grafana-observability-service-catalog-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 02-Service-Catalog
+    files:
+      - l2-service-catalog.json=../../../grafana/l2-service-catalog.json
+
+  - name: grafana-observability-services-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 03-Services
+    files:
+      - l3-service-health-template.json=../../../grafana/l3-service-health-template.json
+      - l3-jvm-runtime.json=../../../grafana/l3-jvm-runtime.json
+      - l3-logs-exceptions.json=../../../grafana/l3-logs-exceptions.json
+      - l3-tracing-dependencies.json=../../../grafana/l3-tracing-dependencies.json
+
+  - name: grafana-observability-k8s-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 04-Kubernetes
+    files:
+      - l3-k8s-workload.json=../../../grafana/l3-k8s-workload.json
+      - l3-k8s-pod-runtime.json=../../../grafana/l3-k8s-pod-runtime.json
+      - l3-k8s-node-infra.json=../../../grafana/l3-k8s-node-infra.json
+
+  - name: grafana-observability-data-platforms-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 05-Data-Platforms
+    files:
+      - l3-database.json=../../../grafana/l3-database.json
+      - l3-cache.json=../../../grafana/l3-cache.json
+      - l3-messaging.json=../../../grafana/l3-messaging.json
+
+  - name: grafana-observability-business-dashboards
+    options:
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: 06-Business
+    files:
+      - l2-business-journey.json=../../../grafana/l2-business-journey.json
+
+generatorOptions:
+  disableNameSuffixHash: true
