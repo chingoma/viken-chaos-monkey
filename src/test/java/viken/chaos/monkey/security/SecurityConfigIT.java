@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "chaos.state.file=${java.io.tmpdir}/chaos-state-security-${random.uuid}.json",
+        "chaos.enabled=true",
         "chaos.security.viewer.password=test-viewer",
         "chaos.security.operator.password=test-operator",
         "chaos.security.admin.password=test-admin",
@@ -65,7 +66,7 @@ class SecurityConfigIT {
         mockMvc.perform(post("/api/chaos/emergency/disable")
                         .with(httpBasic("chaos-admin", "test-admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("00"))
+                .andExpect(jsonPath("$.code").value("2000"))
                 .andExpect(jsonPath("$.data.killSwitchActive").value(true));
     }
 

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: viken-chaos-monkey
+  namespace: chaos-engineering
+  labels:
+    app: viken-chaos-monkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: viken-chaos-monkey
+  template:
+    metadata:
+      labels:
+        app: viken-chaos-monkey
+    spec:
+      serviceAccountName: viken-chaos-monkey
+      containers:
+        - name: viken-chaos-monkey
+          image: viken-chaos-monkey:1.0.0-SNAPSHOT
+          ports:
+            - containerPort: 20000
+              name: http
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: CHAOS_K8S_ENABLED
+              value: "false"
+            - name: CHAOS_K8S_PROD_OVERRIDE
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 20000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 20000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: viken-chaos-monkey
+  namespace: chaos-engineering
+spec:
+  selector:
+    app: viken-chaos-monkey
+  ports:
+    - port: 20000
+      targetPort: 20000
+      name: http
